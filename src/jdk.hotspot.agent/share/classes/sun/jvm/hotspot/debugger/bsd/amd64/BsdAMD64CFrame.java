@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,39 +30,8 @@ import sun.jvm.hotspot.debugger.bsd.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.cdbg.basic.*;
 
-final public class BsdAMD64CFrame extends BasicCFrame {
-
-   public static BsdAMD64CFrame getTopFrame(BsdDebugger dbg, Address rip, ThreadContext context) {
-      Address libptr = dbg.findLibPtrByAddress(rip);
-      Address cfa = context.getRegisterAsAddress(AMD64ThreadContext.RBP);
-      DwarfParser dwarf = null;
-
-      if (libptr != null) { // Native frame
-        dwarf = new DwarfParser(libptr);
-        try {
-          dwarf.processDwarf(rip);
-        } catch (DebuggerException e) {
-          // DWARF processing should succeed when the frame is native
-          // but it might fail if Common Information Entry (CIE) has language
-          // personality routine and/or Language Specific Data Area (LSDA).
-          return new BsdAMD64CFrame(dbg, cfa, rip, dwarf, true);
-        }
-        cfa = ((dwarf.getCFARegister() == AMD64ThreadContext.RBP) &&
-               !dwarf.isBPOffsetAvailable())
-                  ? context.getRegisterAsAddress(AMD64ThreadContext.RBP)
-                  : context.getRegisterAsAddress(dwarf.getCFARegister())
-                           .addOffsetTo(dwarf.getCFAOffset());
-      }
-
-      return (cfa == null) ? null
-                           : new BsdAMD64CFrame(dbg, cfa, rip, dwarf);
-   }
-
-   private BsdAMD64CFrame(BsdDebugger dbg, Address cfa, Address rip, DwarfParser dwarf) {
-      this(dbg, cfa, rip, dwarf, false);
-   }
-
-   private BsdAMD64CFrame(BsdDebugger dbg, Address cfa, Address rip, DwarfParser dwarf, boolean finalFrame) {
+public final class BsdAMD64CFrame extends BasicCFrame {
+   public BsdAMD64CFrame(BsdDebugger dbg, Address rbp, Address rip) {
       super(dbg.getCDebugger());
       this.cfa = cfa;
       this.rip = rip;
